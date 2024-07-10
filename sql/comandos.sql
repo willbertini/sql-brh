@@ -220,18 +220,69 @@ WHERE
     num_linha BETWEEN 1 AND 10
 
 
-/*
-Relatório de plano de saúde
-O usuário quer saber quanto é a mensalidade que cada colaborador deve pagar ao plano de saúde. As regras de pagamento são:
 
-Cada nível de senioridade tem um percentual de contribuição diferente:
-Júnior paga 1% do salário;
-Pleno paga 2% do salário;
-Sênior paga 3% do salário;
-Corpo diretor paga 5% do salário.
-Cada tipo de dependente tem um valor adicional diferente:
-Cônjuge acrescenta R$ 100,00 na mensalidade;
-Maior de idade acrescenta R$ 50,00 na mensalidade;
-Menor de idade acrescenta R$ 25,00 na mensalidade.
-O valor a ser pago é a soma do percentual definido pela senioridade mais o valor de cada dependente do colaborador.
-*/
+
+
+--Crie a procedure brh.insere_projeto para cadastrar um novo projeto na base de dados:
+--Parâmetros da procedure:
+--Nome do projeto: varchar com nome do novo projeto.
+--Resposável do projeto: varchar com a matrícula do colaborador responsável.
+CREATE OR REPLACE PROCEDURE brh.insere_projeto
+(p_NOME IN BRH.PROJETO.NOME%type, p_RESPONSAVEL IN BRH.PROJETO.RESPONSAVEL%type)
+IS
+BEGIN
+    INSERT INTO BRH.PROJETO (NOME, RESPONSAVEL, INICIO) VALUES (p_NOME, p_RESPONSAVEL, SYSDATE);
+END;
+
+EXECUTE brh.insere_projeto ('TESTE','A123');
+
+--Criar função calcula_idade
+--Crie a function brh.calcula_idade, que informa a idade a partir de uma data:
+--Parâmetros da function:
+--Data: date com a data de referência para calcular a idade.
+--Retorno da function:
+--Deve retornar um número inteiro com a idade.
+--Utilize a função MONTHS_BETWEEN para calcular a idade.
+CREATE OR REPLACE FUNCTION brh.calcula_idade
+(p_DATA DATE)
+RETURN INT
+IS
+v_IDADE INT;
+BEGIN
+    v_IDADE := TRUNC(MONTHS_BETWEEN(SYSDATE, p_DATA) / 12);
+    RETURN v_IDADE;
+END;
+
+SELECT brh.calcula_idade('26/04/1986') FROM DUAL
+
+--Criar função finaliza_projeto
+--Crie a function brh.finaliza_projeto para registrar o término da execução de um projeto:
+--Parâmetros da function:
+--ID do projeto: number com identificador do projeto a ser finalizado.
+--Retorno da function:
+--Deve retornar a data de finalização atribuída ao projeto.
+--A data fim do projeto deve ser a data e hora atual;
+CREATE OR REPLACE FUNCTION brh.finaliza_projeto
+(p_ID IN BRH.PROJETO.ID%type)
+RETURN BRH.PROJETO.FIM%type
+IS
+    v_DATA_FIM BRH.PROJETO.FIM%type;
+BEGIN
+    UPDATE brh.PROJETO SET brh.PROJETO.FIM = SYSDATE WHERE ID = p_ID;
+    RETURN v_DATA_FIM;
+END;
+
+--Validar novo projeto
+--Altere a procedure brh.insere_projeto para não permitir cadastrar projetos inválidos;
+--O nome do novo do projeto deve ter duas ou mais letras:
+--Se tiver menos caracteres, ou for null, lance uma exceção com a mensagem "Nome de projeto inválido! Deve ter dois ou mais caracteres.".
+--Use a função LENGTH para descobrir o tamanho do texto.
+CREATE OR REPLACE PROCEDURE brh.insere_projeto
+(p_NOME IN BRH.PROJETO.NOME%type, p_RESPONSAVEL IN BRH.PROJETO.RESPONSAVEL%type)
+IS
+BEGIN
+    IF LENGTH(p_NOME) >= 2 THEN
+        INSERT INTO BRH.PROJETO (NOME, RESPONSAVEL, INICIO) VALUES (p_NOME, p_RESPONSAVEL, SYSDATE);
+    ELSE dbms_output.put_line('Nome de projeto inválido! Deve ter dois ou mais caracteres.'); 
+    END IF;
+END;
